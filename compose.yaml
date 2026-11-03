@@ -5,6 +5,15 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:${SITE_PORT:-18085}:8080"
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: "instituto-acesso-site-internal"
+      traefik.http.routers.instituto-acesso-site.rule: "Host(`institutoacesso.org.br`) || Host(`www.institutoacesso.org.br`)"
+      traefik.http.routers.instituto-acesso-site.entrypoints: "websecure"
+      traefik.http.routers.instituto-acesso-site.tls: "true"
+      traefik.http.routers.instituto-acesso-site.tls.certresolver: "letsencrypt"
+      traefik.http.routers.instituto-acesso-site.service: "instituto-acesso-site"
+      traefik.http.services.instituto-acesso-site.loadbalancer.server.port: "8080"
     security_opt:
       - no-new-privileges:true
     logging:
@@ -12,3 +21,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+networks:
+  default:
+    name: instituto-acesso-site-internal
