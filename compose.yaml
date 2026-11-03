@@ -1,0 +1,14 @@
+name: instituto-acesso-site
+services:
+  site:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${SITE_PORT:-18085}:8080"
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
