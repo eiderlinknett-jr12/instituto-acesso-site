@@ -47,24 +47,22 @@ curl -fsS http://127.0.0.1:18085/healthz
 curl -fsS http://127.0.0.1:18085/ | head -c 300
 ```
 
-Os comandos não publicam o site nas portas 80/443. O proxy existente encaminhará o domínio para ele. Se 18085 estiver ocupada, escolher outra porta livre, gravar `SITE_PORT=PORTA_LIVRE` em `.env` antes de iniciar e usar a mesma porta no proxy.
+O container usa apenas 18085 no loopback da VPS. As labels agora solicitam ao Traefik existente o atendimento dos dois domínios em HTTPS. Se 18085 estiver ocupada, escolher outra porta livre e gravar SITE_PORT=PORTA_LIVRE em .env antes de iniciar. O Traefik usa a porta interna 8080, sem depender dessa alteração.
 
 Não reutilizar uma pasta `site` já existente sem verificar seu conteúdo.
 
 ## 4. Conectar o domínio ao proxy existente
 
-Esta etapa depende do resultado da inspeção da VPS. Não iniciar um segundo proxy nas portas 80/443.
+Inspeção fornecida pelo proprietário: Traefik na rede host; entrada HTTPS websecure; resolver letsencrypt. O compose.yaml já contém as labels do novo domínio e uma rede bridge exclusiva. O Traefik na rede host pode acessar o IP do container nessa rede; não é necessário alterar a rede ou reiniciar o Traefik. O funcionamento ainda depende de o provider Docker existente detectar o novo container. Se houver restrições específicas do provider, conferir somente essas opções antes de ajustar.
 
-- Nginx instalado na VPS: há um exemplo de virtual host em `deploy/nginx-host.conf.example`, apontando para `http://127.0.0.1:18085`. Adicionar somente o novo domínio em um arquivo próprio, testar com `nginx -t` e só então recarregar. Configurar certificado válido para os dois nomes antes de ativar HTTPS.
-- Nginx Proxy Manager, Traefik ou Caddy em Docker: conectar o novo container à rede do proxy existente e encaminhar para o serviço na porta 8080. O endereço `127.0.0.1` dentro do container do proxy não é o endereço da VPS. A configuração da rede deve ser definida após identificar o proxy.
-- Se não houver proxy: escolher e configurar um, depois de conferir que 80/443 estão livres. Este pacote não instala um automaticamente.
+Não instale outro proxy. O exemplo Nginx em deploy/ é apenas referência para outra infraestrutura e não deve ser aplicado nesta VPS.
 
 ## 5. DNS e HTTPS
 
 1. Adicionar `institutoacesso.org.br` ao Cloudflare, se ainda não estiver lá.
 2. Se necessário, alterar no registrador os nameservers para os dois valores exatos fornecidos pelo Cloudflare. Conferir também DNSSEC se já estiver ativo no provedor anterior.
 3. Preservar registros de e-mail (MX, SPF, DKIM, DMARC) e de outros serviços.
-4. Quando o proxy e o certificado estiverem prontos, configurar:
+4. Depois de o container estar saudável e as labels carregadas, apontar os registros abaixo. Inicialmente usar DNS only (nuvem cinza), permitindo a emissão do certificado pelo Traefik. Depois do HTTPS validado, ativar o proxy (nuvem laranja):
 
 | Tipo | Nome | Conteúdo | Proxy |
 | --- | --- | --- | --- |
